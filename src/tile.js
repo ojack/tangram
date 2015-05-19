@@ -83,7 +83,7 @@ export default class Tile {
     freeResources() {
         if (this.meshes) {
             for (let m in this.meshes) {
-                this.meshes[m].destroy();
+                this.meshes[m].forEach(mesh => mesh.destroy());
             }
         }
 
@@ -134,6 +134,8 @@ export default class Tile {
     // Returns a set of tile keys that should be sent to the main thread (so that we can minimize data exchange between worker and main thread)
     static buildGeometry (tile, layers, rules, styles) {
         tile.debug.rendering = +new Date();
+        tile.mesh_data = {};
+        let queue = [];
 
         for (let source_name in tile.sources) {
             let source = tile.sources[source_name];
@@ -201,23 +203,23 @@ export default class Tile {
             }
 
             source.debug.rendering = +new Date() - source.debug.rendering;
-        }
 
-        // Finalize array buffer for each render style
-        let tile_styles = StyleManager.stylesForTile(tile.key);
-        tile.mesh_data = {};
-        let queue = [];
-        for (let style_name of tile_styles) {
-            let style = styles[style_name];
-            queue.push(style.endData(tile.key).then((style_data) => {
-                if (style_data) {
-                    tile.mesh_data[style_name] = {
-                        vertex_data: style_data.vertex_data,
-                        uniforms: style_data.uniforms,
-                        textures: style_data.textures
-                    };
-                }
-            }));
+            // Finalize array buffer for each render style
+            let tile_styles = StyleManager.stylesForTile(tile.key);
+            for (let style_name of tile_styles) {
+                let style = styles[style_name];
+                queue.push(style.endData(tile.key).then((style_data) => {
+                    if (style_data) {
+                        let mesh_name = source_name + '/' + style_name;
+                        tile.mesh_data[mesh_name] = {
+                            style: style_name,
+                            vertex_data: style_data.vertex_data,
+                            uniforms: style_data.uniforms,
+                            textures: style_data.textures
+                        };
+                    }
+                }));
+            }
         }
 
         return Promise.all(queue).then(() => {
@@ -246,7 +248,7 @@ export default class Tile {
     static getDataForSource (source_data, source_config, default_layer = null) {
         var geom;
 
-        if (source_config != null) {
+        if (source_config && source_data && source_data.layers) {
             // If no layer specified, and a default source layer exists
             if (!source_config.layer && source_data.layers._default) {
                 geom = source_data.layers._default;
@@ -273,11 +275,6 @@ export default class Tile {
        for a single tile.
     */
     buildMeshes(styles) {
-        if (this.error) {
-            log.error(`main thread tile load error for ${this.key}: ${this.error}`);
-            return;
-        }
-
         // Cleanup existing VBOs
         this.freeResources();
 
@@ -291,13 +288,19 @@ export default class Tile {
             for (var s in mesh_data) {
                 if (mesh_data[s].vertex_data) {
                     this.debug.buffer_size += mesh_data[s].vertex_data.byteLength;
-                    if (!styles[s]) {
-                        log.warn(`Could not create mesh because style '${s}' not found, for tile ${this.key}, aborting tile`);
+
+                    let style_name = mesh_data[s].style;
+                    let style = styles[style_name];
+                    if (!style) {
+                        log.warn(`Could not create mesh because style '${style_name}' not found, for tile ${this.key}, aborting tile`);
                         this.meshes = {};
                         break;
                     }
-                    this.meshes[s] = styles[s].makeMesh(mesh_data[s].vertex_data, mesh_data[s]);
-                    this.debug.geometries += this.meshes[s].geometry_count;
+                    let mesh = style.makeMesh(mesh_data[s].vertex_data, mesh_data[s]);
+
+                    this.meshes[style_name] = this.meshes[style_name] || [];
+                    this.meshes[style_name].push(mesh);
+                    this.debug.geometries += mesh.geometry_count;
                 }
 
                 // Assign ownership to textures if needed

@@ -186,7 +186,16 @@ export class NetworkTileSource extends NetworkSource {
     }
 
     formatUrl(tile) {
-        var url = this.url.replace('{x}', tile.coords.x).replace('{y}', tile.coords.y).replace('{z}', tile.coords.z);
+        let {x, y, z} = tile.coords;
+
+        if (tile.coords.z > this.max_zoom) {
+            let ztrans = Math.pow(2, tile.coords.z - this.max_zoom);
+            x = Math.floor(x / ztrans);
+            y = Math.floor(y / ztrans);
+            z = this.max_zoom;
+        }
+
+        var url = this.url.replace('{x}', x).replace('{y}', y).replace('{z}', z);
 
         if (this.url_hosts != null) {
             url = url.replace(/{s:\[([^}+]+)\]}/, this.url_hosts[this.next_host]);

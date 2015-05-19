@@ -731,8 +731,10 @@ export default class Scene {
                 program.uniform('Matrix3fv', 'u_normalMatrix', false, this.normalMatrix32);
 
                 // Render tile
-                tile.meshes[style].render();
-                render_count += tile.meshes[style].geometry_count;
+                tile.meshes[style].forEach(mesh => {
+                    mesh.render();
+                    render_count += mesh.geometry_count;
+                });
             }
         }
 
@@ -908,15 +910,16 @@ export default class Scene {
     }
 
     findMaxZoom() {
-        var max_zoom = this.max_zoom || Geo.max_zoom;
+        // var max_zoom = this.max_zoom || Geo.max_zoom;
 
-        for (var name in this.sources) {
-            let source = this.sources[name];
-            if (source.max_zoom < max_zoom) {
-                max_zoom = source.max_zoom;
-            }
-        }
-        return max_zoom;
+        // for (var name in this.sources) {
+        //     let source = this.sources[name];
+        //     if (source.max_zoom < max_zoom) {
+        //         max_zoom = source.max_zoom;
+        //     }
+        // }
+        // return max_zoom;
+        return Geo.max_zoom;
     }
 
     // Rebuild geometry, without re-parsing the config or re-compiling styles

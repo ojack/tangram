@@ -121,21 +121,23 @@ Utils.isWorkerThread && Object.assign(self, {
                             map(s => tile.sources[s].error && `[source '${s}': ${tile.sources[s].error}]`).
                             filter(x => x);
                         if (e.length > 0) {
+                            tile.error = e;
                             Utils.log('warn', `tile load error(s) for ${tile.key}: ${e.join(', ')}`);
                         }
 
                         tile.loading = false;
                         tile.loaded = true;
+
                         Tile.buildGeometry(tile, self.config.layers, self.rules, self.styles).then(keys => {
                             resolve({ tile: Tile.slice(tile, keys) });
                         });
-                    }).catch((error) => {
-                        tile.loading = false;
-                        tile.loaded = false;
-                        tile.error = error.toString();
-                        Utils.log('error', `tile load error for ${tile.key}: ${error.stack}`);
+                    // }).catch((error) => {
+                    //     tile.loading = false;
+                    //     tile.loaded = false;
+                    //     tile.error = error.toString();
+                    //     Utils.log('error', `tile load error for ${tile.key}: ${error.stack}`);
 
-                        resolve({ tile: Tile.slice(tile) });
+                    //     resolve({ tile: Tile.slice(tile) });
                     });
                 });
             }
