@@ -153,10 +153,11 @@ Utils.isWorkerThread && Object.assign(self, {
 
     // Load all data sources into a tile
     loadSourcesIntoTile (tile) {
-        return Promise.all(
-            Object.keys(self.sources.tiles)
-                .map(x => self.sources.tiles[x].load(tile))
-        );
+        // return Promise.all(
+        //     Object.keys(self.sources.tiles)
+        //         .map(x => self.sources.tiles[x].load(tile))
+        // );
+        return self.sources.tiles[tile.source].load(tile);
     },
 
     // Remove tile

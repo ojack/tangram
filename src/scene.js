@@ -10,7 +10,6 @@ import {StyleManager} from './styles/style_manager';
 import {StyleParser} from './styles/style_parser';
 import Camera from './camera';
 import Light from './light';
-import Tile from './tile';
 import TileManager from './tile_manager';
 import DataSource from './data_source';
 import FeatureSelection from './selection';
@@ -382,10 +381,10 @@ export default class Scene {
         this.center_meters = { x, y };
 
         let z = this.tileZoom(this.zoom);
-        let max_zoom = this.findMaxZoom();
-        if (z > max_zoom) {
-            z = max_zoom;
-        }
+        // let max_zoom = this.findMaxZoom();
+        // if (z > max_zoom) {
+        //     z = max_zoom;
+        // }
         this.center_tile = Geo.tileForMeters([this.center_meters.x, this.center_meters.y], z);
 
         this.bounds_meters = {
@@ -411,20 +410,21 @@ export default class Scene {
         }
 
         let z = this.tileZoom(this.zoom);
-        let max_zoom = this.findMaxZoom();
-        if (z > max_zoom) {
-            z = max_zoom;
-        }
+        // let max_zoom = this.findMaxZoom();
+        // if (z > max_zoom) {
+        //     z = max_zoom;
+        // }
 
         let sw = Geo.tileForMeters([this.bounds_meters.sw.x, this.bounds_meters.sw.y], z);
         let ne = Geo.tileForMeters([this.bounds_meters.ne.x, this.bounds_meters.ne.y], z);
         buffer = buffer || 0;
 
-        let tiles = {};
+        // let tiles = {};
+        let tiles = [];
         for (let x = sw.x - buffer; x <= ne.x + buffer; x++) {
             for (let y = ne.y - buffer; y <= sw.y + buffer; y++) {
                 let coords = { x, y, z };
-                tiles[Tile.key(coords)] = coords;
+                tiles.push(coords);
             }
         }
         return tiles;
@@ -527,7 +527,7 @@ export default class Scene {
     }
 
     update() {
-        this.tile_manager.loadQueuedTiles();
+        this.tile_manager.loadQueuedTileCoordinates();
 
         // Render on demand
         var will_render = !(
@@ -692,7 +692,7 @@ export default class Scene {
                 // TODO: calc these once per tile (currently being needlessly re-calculated per-tile-per-style)
 
                 // Tile origin
-                program.uniform('3f', 'u_tile_origin', tile.min.x, tile.min.y, tile.coords.z);
+                program.uniform('3f', 'u_tile_origin', tile.min.x, tile.min.y, tile.style_zoom);
 
                 // Model matrix - transform tile space into world space (meters, absolute mercator position)
                 mat4.identity(this.modelMatrix);
@@ -817,12 +817,12 @@ export default class Scene {
     findMaxZoom() {
         var max_zoom = this.max_zoom || Geo.max_zoom;
 
-        for (var name in this.sources) {
-            let source = this.sources[name];
-            if (source.max_zoom < max_zoom) {
-                max_zoom = source.max_zoom;
-            }
-        }
+        // for (var name in this.sources) {
+        //     let source = this.sources[name];
+        //     if (source.max_zoom < max_zoom) {
+        //         max_zoom = source.max_zoom;
+        //     }
+        // }
         return max_zoom;
     }
 
@@ -960,13 +960,13 @@ export default class Scene {
     }
 
     setSourceMax() {
-        let max_zoom = this.findMaxZoom();
+        // let max_zoom = this.findMaxZoom();
 
-        for (var name in this.sources) {
-            let source = this.sources[name];
-            source.max_zoom = max_zoom;
-        }
-        return max_zoom;
+        // for (var name in this.sources) {
+        //     let source = this.sources[name];
+        //     source.max_zoom = max_zoom;
+        // }
+        // return max_zoom;
     }
 
     // Normalize some settings that may not have been explicitly specified in the scene definition

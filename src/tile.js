@@ -16,7 +16,7 @@ export default class Tile {
         coords: object with {x, y, z} properties identifying tile coordinate location
         worker: web worker to handle tile construction
     */
-    constructor({ coords, worker, max_zoom, style_zoom }) {
+    constructor({ coords, source, worker, style_zoom }) {
         Object.assign(this, {
             coords: {
                 x: null,
@@ -34,16 +34,17 @@ export default class Tile {
         });
 
         this.worker = worker;
-        this.max_zoom = max_zoom;
+        this.source = source;
+        this.style_zoom = style_zoom || this.coords.z; // zoom level to be used for styling
 
         this.coords = coords;
-        this.coords = Tile.calculateOverZoom(this.coords, this.max_zoom);
-        this.key = Tile.key(this.coords);
+        this.coords = Tile.calculateOverZoom(this.coords, this.source.max_zoom);
+        this.coord_key = Tile.key(this.coords);
+        this.key = this.source.key(this.coords, this.style_zoom);
         this.min = Geo.metersForTile(this.coords);
         this.max = Geo.metersForTile({x: this.coords.x + 1, y: this.coords.y + 1, z: this.coords.z }),
         this.span = { x: (this.max.x - this.min.x), y: (this.max.y - this.min.y) };
         this.bounds = { sw: { x: this.min.x, y: this.max.y }, ne: { x: this.max.x, y: this.min.y } };
-        this.style_zoom = style_zoom || this.coords.z; // zoom level to be used for styling
 
         this.meshes = {}; // renderable VBO meshes keyed by style
         this.textures = []; // textures that the tile owns (labels, etc.)
@@ -56,6 +57,19 @@ export default class Tile {
     static key({x, y, z}) {
         return [x, y, z].join('/');
     }
+
+    static isChild(parent, child) {
+        if (child.z > parent.z) {
+            let zdiff = child.z - parent.z;
+            let x = Math.floor(child.x >> zdiff);
+            let y = Math.floor(child.y >> zdiff);
+            return (parent.x === x && parent.y === y);
+        }
+        return false;
+    }
+
+    // static isParentOf(child) {
+    // }
 
     static calculateOverZoom({x, y, z}, max_zoom) {
         max_zoom = max_zoom || z;
@@ -109,6 +123,8 @@ export default class Tile {
     buildAsMessage() {
         return {
             key: this.key,
+            coord_key: this.coord_key,
+            source: this.source.name,
             coords: this.coords,
             min: this.min,
             max: this.max,
@@ -274,7 +290,6 @@ export default class Tile {
     */
     buildMeshes(styles) {
         if (this.error) {
-            log.error(`main thread tile load error for ${this.key}: ${this.error}`);
             return;
         }
 

@@ -135,9 +135,14 @@ styles:
 
 sources:
     # When commented, demo main.js will set source based on URL - uncomment for testing
-    # osm:
-    #     type: TopoJSONTiles
-    #     url:  http://vector.mapzen.com/osm/all/{z}/{x}/{y}.topojson?api_key=vector-tiles-HqUVidw
+    osm:
+        type: TopoJSONTiles
+        url:  http://vector.mapzen.com/osm/all/{z}/{x}/{y}.topojson?api_key=vector-tiles-HqUVidw
+        max_zoom: 15
+    buildings:
+        type: MVT
+        url: //{s:[a,b,c,d]}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v6-dev/{z}/{x}/{y}.vector.pbf?access_token=pk.eyJ1IjoiYmNhbXBlciIsImEiOiJWUmh3anY0In0.1fgSTNWpQV8-5sBjGbBzGg
+        # max_zoom: 15
 
 layers:
     earth:
@@ -283,7 +288,9 @@ layers:
                             order: 38
 
     buildings:
-        data: { source: osm }
+        # data: { source: osm }
+        data: { source: buildings, layer: building }
+        # data: { source: osm, layer: building }
         filter: { $zoom: { min: 14 } }
 
         draw:
@@ -302,7 +309,8 @@ layers:
             draw:
                 polygons:
                     style: buildings
-                    extrude: function () { return feature.height > 20 || $zoom >= 16; }
+                    # extrude: function () { return feature.height > 20 || $zoom >= 16; }
+                    extrude: 50
 
         high-line:
             filter: { roof_material: grass }

@@ -30,20 +30,20 @@ describe('TileManager', function () {
         let coords = midtownTile;
 
         beforeEach(() => {
-            sinon.spy(TileManager, 'loadTile');
+            sinon.spy(TileManager, 'queueTileCoordinate');
 
             return scene.init().then(() => {
                 TileManager.queueTile(coords);
-                TileManager.loadQueuedTiles();
+                TileManager.loadQueuedTileCoordinates();
             });
         });
 
-        it('calls loadTile with the queued tile', () => {
-            sinon.assert.calledWith(TileManager.loadTile, coords);
+        it('calls queueTileCoordinate with the queued tile', () => {
+            sinon.assert.calledWith(TileManager.queueTileCoordinate, coords);
         });
     });
 
-    describe('.loadTile(coords, options)', () => {
+    describe('.queueTileCoordinate(coords, options)', () => {
 
         let coords = midtownTile;
 
@@ -54,12 +54,12 @@ describe('TileManager', function () {
         describe('when the tile manager has not loaded the tile', () => {
 
             it('loads the tile', () => {
-                let tile = TileManager.loadTile(coords);
+                let tile = TileManager.queueTileCoordinate(coords);
                 assert.instanceOf(tile, Tile);
             });
 
             it('keeps the tile', () => {
-                let tile = TileManager.loadTile(coords);
+                let tile = TileManager.queueTileCoordinate(coords);
                 let tiles = TileManager.tiles;
                 assert.instanceOf(tiles[tile.key], Tile);
             });
@@ -70,9 +70,9 @@ describe('TileManager', function () {
             let tile;
 
             beforeEach(() => {
-                TileManager.loadTile(coords);
+                TileManager.queueTileCoordinate(coords);
                 sinon.spy(TileManager, 'keepTile');
-                tile = TileManager.loadTile(coords);
+                tile = TileManager.queueTileCoordinate(coords);
                 sinon.spy(tile, 'build');
             });
 

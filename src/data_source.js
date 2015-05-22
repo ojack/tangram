@@ -1,6 +1,7 @@
 /*jshint worker: true */
 /*globals DataSource, topojson */
 import Geo from './geo';
+import Tile from './tile';
 import {MethodNotImplemented} from './utils/errors';
 import Utils from './utils/utils';
 
@@ -92,6 +93,11 @@ export default class DataSource {
                 });
             }
         }
+    }
+
+    key ({ x, y, z }, style_zoom) {
+        let coords = Tile.calculateOverZoom({ x, y, z }, this.max_zoom);
+        return [this.name, style_zoom, coords.x, coords.y, coords.z].join('/');
     }
 
     load(dest) { throw new MethodNotImplemented('load'); }
